@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% load static %}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Crude Intelligence{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+  <script src="https://cdn.plot.ly/plotly-latest.min.js" defer></script>
+   
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    
+    .mobile-header {
+      display: none;
+      background: linear-gradient(to right, #212529, #495057);
+      color: white;
+      padding: 1rem;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1001;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .hamburger-btn {
+      background: none;
+      border: 2px solid white;
+      color: white;
+      font-size: 1.2rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    
+    .hamburger-btn:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .mobile-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-left: 1rem;
+      color: white;
+      text-decoration: none;
+
+    }
+    
+    .main-container {
+      display: flex;
+      flex: 1;
+      width: 100vw;
+      overflow-x: auto;
+    }
+    
+    nav.sidebar {
+      width: 250px;
+      background: linear-gradient(to bottom, #212529, #495057);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 1000;
+      transition: transform 0.3s ease;
+    }
+    
+    nav.sidebar .app-title {
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin-bottom: 2rem;
+      text-align: center;
+      letter-spacing: 1px;
+      border-bottom: 2px solid #495057;
+      padding-bottom: 0.5rem;
+    }
+    
+    nav.sidebar ul {
+      list-style: none;
+      padding-left: 0;
+      flex-grow: 1;
+    }
+    
+    nav.sidebar ul li {
+      margin-bottom: 1rem;
+    }
+    
+    nav.sidebar ul li a {
+      color: white;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.1rem;
+      transition: background-color 0.2s ease;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+    }
+    
+    nav.sidebar ul li a:hover,
+    nav.sidebar ul li a.active {
+      background-color: #495057;
+    }
+    
+    main.content {
+      flex-grow: 1;
+      padding: 2rem;
+      background-color: #f8f9fa;
+      margin-left: 250px;
+      transition: margin-left 0.3s ease;
+    }
+    
+    /* Overlay for mobile when sidebar is open */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+    
+    /* Mobile styles */
+    @media (max-width: 768px) {
+      .mobile-header {
+        display: flex;
+        align-items: center;
+      }
+      
+      nav.sidebar {
+        transform: translateX(-100%);
+        top: 0;
+        z-index: 1000;
+      }
+      
+      nav.sidebar.open {
+        transform: translateX(0);
+      }
+      
+      main.content {
+        margin-left: 0;
+        margin-top: 70px; /* Account for mobile header */
+        padding: 1rem;
+      }
+      
+      .sidebar-overlay.show {
+        display: block;
+      }
+    }
+    
+    /* Smaller mobile screens */
+    @media (max-width: 480px) {
+      nav.sidebar {
+        width: 280px;
+      }
+      
+      main.content {
+        padding: 0.5rem;
+      }
+      
+      .mobile-title {
+        font-size: 1.2rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+  nav.sidebar .app-title {
+    display: none;
+  }
+  .sidebar{
+    margin-top: 65px;
+  }
+}
+  </style>
+
+</head>
+
+<body>
+  <!-- Mobile Header with Hamburger Menu -->
+  <div class="mobile-header">
+    <button class="hamburger-btn" onclick="toggleSidebar()">
+      <i class="bi bi-list"></i>
+    </button>
+    <a class="mobile-title" href="{% url 'home' %}">Crude Intelligence</a>
+  </div>
+  
+  <!-- Sidebar Overlay for Mobile -->
+  <div class="sidebar-overlay" onclick="closeSidebar()"></div>
+  
+  <div class="main-container">
+    <nav class="sidebar" id="sidebar">
+      <div class="app-title">
+        <a href="{% url 'home' %}" style="color: white; text-decoration: none;">Crude Intelligence</a>
+      </div>   
+      <ul>
+        <li><a href="{% url 'home' %}" onclick="closeSidebarOnMobile()"><i class="bi bi-grid"></i>Dashboard</a></li>
+        <li><a href="{% url 'spills_cost_analysis' %}" onclick="closeSidebarOnMobile()"><i class="bi bi-calculator"></i>Spills Cost Analysis</a></li>
+        <li><a href="{% url 'spill_events_map' %}" onclick="closeSidebarOnMobile()"><i class="bi bi-geo-alt"></i>Spill Events Map</a></li>
+        <li><a href="{% url 'spills_over_time' %}" onclick="closeSidebarOnMobile()"><i class="bi bi-bar-chart-line"></i>Spills Over Time</a></li>
+        <li><a href="{% url 'oil_trade_flows' %}" onclick="closeSidebarOnMobile()"><i class="bi bi-arrow-left-right"></i>Oil Trade Flows</a></li>
+      </ul>
+    </nav>
+    
+    <main class="content">
+      {% block content %}
+      {% endblock %}
+    </main>
+  </div>
+  
+  {% block footer %}
+    {% include 'components/footer.html' %}
+  {% endblock %}
+  
+  <script src="{% static 'js/choropleth.js' %}" defer></script>
+  
+  <script>
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.querySelector('.sidebar-overlay');
+      
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('show');
+    }
+    
+    function closeSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.querySelector('.sidebar-overlay');
+      
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+    }
+    
+    function closeSidebarOnMobile() {      
+      if (window.innerWidth <= 768) {
+        closeSidebar();
+      }
+    }
+        
+    window.addEventListener('resize', function() {
+      if (window.innerWidth > 768) {
+        closeSidebar();
+      }
+    });
+        
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeSidebar();
+      }
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+  
+<div class="modal fade" id="aboutModal" tabindex="-1" aria-labelledby="aboutModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-light">
+      <div class="modal-header">
+        <h5 class="modal-title" id="aboutModalLabel">About Crude Intelligence</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Crude Intelligence is an interactive oil industry analytics dashboard built with Django, PostgreSQL, and Plotly. It visualizes global oil trade, consumption, production, and pipeline incidents using Sankey diagrams, choropleths, and interactive charts. <br/><br/> Featuring a spill cost analysis tool, detailed incident maps, and downloadable visualizations, Crude Intelligence demonstrates the power of full-stack development in transforming raw industry data into actionable insights.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="contactModal" tabindex="-1" aria-labelledby="contactModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-light">
+      <div class="modal-header">
+        <h5 class="modal-title" id="contactModalLabel">Contact</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Email us at <a href="mailto:contact@gerardosanchez.com" class="text-info">contact@gerardosanchez.com</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="privacyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-light">
+      <div class="modal-header">
+        <h5 class="modal-title" id="privacyModalLabel">Privacy Policy</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        We respect your privacy. No personal data is stored or tracked beyond basic analytics.
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

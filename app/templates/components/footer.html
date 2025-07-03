@@ -1,0 +1,36 @@
+<style>
+    a{
+        cursor: pointer;
+    }
+</style>
+<footer class="footer py-4 bg-dark text-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <h5>📊 Crude Intelligence</h5>
+                <p class="mb-0">Real-time oil market analytics and insights</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <p class="mb-1">© 2025 Crude Intelligence Dashboard</p>
+                <small class="text-muted">
+                    Data updated: <span id="lastUpdated">{% now "M d, Y" %}</span>
+                </small>
+            </div>
+        </div>
+        <hr class="my-3">
+        <div class="row">
+            <div class="col-md-8">
+                <small class="text-muted">
+                    Sources: EIA, IEA, Bloomberg Energy, Reuters
+                </small>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <small>
+                <a class="text-light me-3" data-bs-toggle="modal" data-bs-target="#aboutModal">About</a>
+                <a class="text-light me-3" data-bs-toggle="modal" data-bs-target="#contactModal">Contact</a>
+                <a class="text-light" data-bs-toggle="modal" data-bs-target="#privacyModal">Privacy</a>
+                </small>
+            </div>
+        </div>
+    </div>
+</footer>

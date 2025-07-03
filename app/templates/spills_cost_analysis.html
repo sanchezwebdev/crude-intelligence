@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Oil Spills Cost Analysis{% endblock %}
+
+{% block content %}
+<style>
+  .filter-form{
+    min-height: 100vh;
+  }
+  h1 {
+    margin-bottom: 1.5rem;
+  }
+
+  form {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-section {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+  }
+
+  .form-section h2 {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    color: #444;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0.25rem;
+  }
+
+  .form-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2rem;
+    align-items: flex-start;
+  }
+
+  .form-controls > div {
+    display: flex;
+    flex-direction: column;
+    min-width: fit-content;
+    max-width: 100%;
+  }
+
+
+  .form-controls label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+  }
+
+  .form-controls select {
+    width: auto;
+    min-width: max-content;
+    max-width: 100%;
+    padding: 0.4rem;
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+
+  .total-display {
+    font-size: 1.4rem;
+    font-weight: bold;
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    background-color: #f7f7f7;
+    border-left: 6px solid #dc3545;
+    border-radius: 4px;
+  }
+
+  .checkbox-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.75rem 2rem;
+    margin-top: 1rem;
+  }
+
+  .checkbox-controls label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  .table-container {
+    height: 60vh;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    padding: 0.5rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  th {
+    background-color: #dc3545;
+    color: white;
+    position: sticky;
+    top: 0;
+  }
+  
+.cost-categories {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 20px 25px;
+  max-width: 480px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  margin-bottom: 2rem;
+}
+
+
+.cost-categories .total-display {
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+  color: #222;
+}
+
+
+.checkbox-label {
+  font-weight: 600;
+  margin-bottom: 10px;
+  display: block;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px 30px; 
+}
+
+
+.checkbox-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #444;
+  user-select: none;
+  min-width: 160px;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.custom-checkbox {
+  width: 24px;
+  height: 24px;
+  background-color: white;
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  margin-right: 10px;
+  transition: background-color 0.2s, border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.checkbox-wrapper input[type="checkbox"]:checked + .custom-checkbox {
+  background-color: #4a90e2; 
+  border-color: #4a90e2;
+}
+
+.custom-checkbox::after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.checkbox-wrapper input[type="checkbox"]:checked + .custom-checkbox::after {
+  display: block;
+  left: 7px;
+  top: 3px;
+  width: 6px;
+  height: 12px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+}
+
+.checkbox-wrapper:hover .custom-checkbox {
+  border-color: #4a90e2;
+}
+
+#totalCostDisplay{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;  
+}
+
+  #resetButton {
+    margin: 1em 0;
+    padding: 0.5em 1em;
+    background-color: #f2f2f2;
+    border: 1px solid #ccc;
+    cursor: pointer;
+  }
+
+  #resetButton:hover {
+    background-color: #e6e6e6;
+  }
+
+</style>
+<h1>🔢 Spills Cost Analysis</h1>
+<form method="get" id="filter-form">
+  
+    <div class="form-section cost-categories">
+      <h2>💰 Include Cost Categories</h2>
+      
+      <div class="total-display">
+        Total Cost: <strong id="totalCostValue">${{ total_cost|intcomma }}</strong>
+      </div>
+      
+      <div class="checkbox-controls">
+        <label class="checkbox-label">Include in Cost Total:</label>
+        <div class="checkbox-group">
+          {% for item in cost_field_options %}
+          <label class="checkbox-wrapper">
+            <input
+            type="checkbox"
+            name="cost_fields"
+            value="{{ item.field }}"
+            class="{% if item.field == 'all_costs' %}all-costs-checkbox{% else %}cost-field-checkbox{% endif %}"
+            {% if item.checked %}checked{% endif %}
+            onchange="handleCostCheckboxChange(this)"
+            >
+            <span class="custom-checkbox"></span>
+            {{ item.label }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>  
+  </div>
+    <div class="form-section">
+      <h2>🔎 Filter Spills</h2>
+      <div class="form-controls">
+        <div>
+          <label for="year">Year:</label>
+          <select name="year" id="year" >
+            {% for year in year_options %}
+              <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label for="pipeline_location">Pipeline Location:</label>
+          <select name="pipeline_location" id="pipeline_location" >
+            <option value="">All</option>
+            {% for option in location_options %}
+              <option value="{{ option }}" {% if option == selected_location %}selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label for="pipeline_type">Pipeline Type:</label>
+          <select name="pipeline_type" id="pipeline_type" >
+            <option value="">All</option>
+            {% for option in pipeline_options %}
+              <option value="{{ option }}" {% if option == selected_pipeline %}selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label for="liquid_type">Liquid Type:</label>
+          <select name="liquid_type" id="liquid_type" >
+            <option value="">All</option>
+            {% for option in liquid_options %}
+              <option value="{{ option }}" {% if option == selected_liquid %}selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label for="accident_state">State:</label>
+          <select name="accident_state" id="accident_state" >
+            <option value="">All</option>
+            {% for option in state_options %}
+              <option value="{{ option }}" {% if option == selected_state %}selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label for="cause_category">Cause:</label>
+          <select name="cause_category" id="cause_category" >
+            <option value="">All</option>
+            {% for option in cause_options %}
+              <option value="{{ option }}" {% if option == selected_cause %}selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+    
+  <div id="totalCostDisplay">
+    <span>Total Cost: <strong id="totalCostValue">${{ total_cost|intcomma }}</strong></span>
+    <button type="button" id="resetButton">🔄 Reset Filters</button>
+  </div>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Year</th>
+          <th>Pipeline Location</th>
+          <th>Pipeline Type</th>
+          <th>Liquid Type</th>
+          <th>State</th>
+          <th>Cause</th>
+          <th>Location</th>
+          <th>Cost (USD)</th>
+        </tr>
+      </thead>
+      <tbody id="spillTableBody">
+        {% for spill in table_data %}
+        <tr>
+          <td>{{ spill.accident_year }}</td>
+          <td>{{ spill.pipeline_location }}</td>
+          <td>{{ spill.pipeline_type }}</td>
+          <td>{{ spill.liquid_type }}</td>
+          <td>{{ spill.accident_state }}</td>
+          <td>{{ spill.cause_category }}</td>
+          <td>{{ spill.location }}</td>
+          <td>${{ spill.calculated_cost|intcomma }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</form>
+<script>
+  const form = document.getElementById('filter-form');
+
+  function sendAjaxRequest() {
+    const formData = new FormData(form);
+    const params = new URLSearchParams(formData);
+
+    fetch(`?${params.toString()}`, {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('totalCostValue').textContent = `$${data.total_cost.toLocaleString()}`;
+
+      // Update table
+      const tbody = document.getElementById('spillTableBody');
+      tbody.innerHTML = "";
+      data.table_data.forEach(spill => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${spill.accident_year}</td>
+          <td>${spill.pipeline_location}</td>
+          <td>${spill.pipeline_type}</td>
+          <td>${spill.liquid_type}</td>
+          <td>${spill.accident_state}</td>
+          <td>${spill.cause_category}</td>
+          <td>${spill.location}</td>
+          <td>$${spill.calculated_cost.toLocaleString()}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    });
+  }
+
+  // Listen to all filter <select> elements
+  document.querySelectorAll('#filter-form select').forEach(select => {
+    select.addEventListener('change', sendAjaxRequest);
+  });
+
+  // Checkbox behavior + AJAX
+  function handleCostCheckboxChange(changedCheckbox) {
+    const allCostsCheckbox = document.querySelector('.all-costs-checkbox');
+    const otherCheckboxes = document.querySelectorAll('.cost-field-checkbox');
+
+    if (changedCheckbox.classList.contains('all-costs-checkbox')) {
+      if (changedCheckbox.checked) {
+        otherCheckboxes.forEach(cb => cb.checked = false);
+      }
+    } else {
+      if (changedCheckbox.checked) {
+        allCostsCheckbox.checked = false;
+      } else {
+        const anyChecked = Array.from(otherCheckboxes).some(cb => cb.checked);
+        if (!anyChecked) {
+          allCostsCheckbox.checked = true;
+        }
+      }
+    }
+    sendAjaxRequest();
+  }
+
+    document.getElementById('resetButton').addEventListener('click', () => {    
+    document.querySelectorAll('#filter-form select').forEach(select => {
+      select.value = '';
+    });
+    
+    const allCostsCheckbox = document.querySelector('.all-costs-checkbox');
+    const otherCheckboxes = document.querySelectorAll('.cost-field-checkbox');
+    allCostsCheckbox.checked = true;
+    otherCheckboxes.forEach(cb => cb.checked = false);
+    
+    sendAjaxRequest();
+  });
+</script>
+
+
+{% endblock %}

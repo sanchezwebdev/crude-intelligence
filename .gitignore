@@ -1,0 +1,6 @@
+__pycache__/
+venv
+.env
+.vscode/
+scratch.md
+portfolio-description.md

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block title %}Global Crude Oil Price Overview{% endblock %}
+
+{% block content %}
+  <h1>📉 Spills Over Time</h1>
+  <p>This chart compares oil spills over time: counts of large and medium spills (stacked bars) and total quantity spilled (line).</p>
+  {{ chart|safe }}
+{% endblock %}

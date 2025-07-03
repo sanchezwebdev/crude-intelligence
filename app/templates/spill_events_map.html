@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% load humanize %}
+
+{% block title %}Oil Spills Cost Analysis{% endblock %}
+
+{% block content %}
+<style>
+  .full-chart-container {
+    width: 100%;
+    height: 85vh;
+  }
+
+  .full-chart-container > div {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .form-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: center;
+  }
+
+  .form-controls label {
+    font-weight: bold;
+    margin-right: 0.5rem;
+  }
+
+  .form-controls select {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.95rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #fff;
+    transition: border-color 0.2s ease;
+  }
+
+  .form-controls select:focus {
+    border: 2px solid #495057;
+    outline: none;
+  }
+
+  .table-container {
+    height: 50vh;
+    overflow-y: auto;
+    margin-top: 1rem;
+    border: 1px solid #ccc;
+    padding: 0.5rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  th {
+    background-color: #dc3545;
+    color: white;
+    position: sticky;
+    top: 0;
+  }
+
+  .cost-high {
+    background-color: #ffebee;
+    font-weight: bold;
+  }
+
+  .cost-medium {
+    background-color: #fff3e0;
+  }
+
+  .cost-low {
+    background-color: #f1f8e9;
+  }
+</style>
+<div class="container">
+<h1>📍 Spill Events Map</h1>
+
+<form method="get" class="form-controls">
+  <label for="year">Year:</label>
+  <select name="year" id="year" onchange="this.form.submit()">
+    {% for year in year_options %}
+      <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="pipeline_type">Pipeline Type:</label>
+  <select name="pipeline_type" id="pipeline_type" onchange="this.form.submit()">
+    <option value="">All</option>
+    {% for option in pipeline_options %}
+      <option value="{{ option }}" {% if option == selected_pipeline %}selected{% endif %}>{{ option }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="liquid_type">Liquid Type:</label>
+  <select name="liquid_type" id="liquid_type" onchange="this.form.submit()">
+    <option value="">All</option>
+    {% for option in liquid_options %}
+      <option value="{{ option }}" {% if option == selected_liquid %}selected{% endif %}>{{ option }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="cause_category">Cause Category:</label>
+  <select name="cause_category" id="cause_category" onchange="this.form.submit()">
+    <option value="">All</option>
+    {% for option in cause_options %}
+      <option value="{{ option }}" {% if option == selected_cause %}selected{% endif %}>{{ option }}</option>
+    {% endfor %}
+  </select>
+
+  {% if cost_band_options %}
+  <label for="cost_band">Cost Band:</label>
+  <select name="cost_band" id="cost_band" onchange="this.form.submit()">
+    <option value="">All</option>
+    {% for band in cost_band_options %}
+      <option value="{{ band.value }}" {% if band.value == selected_cost_band %}selected{% endif %}>
+        {{ band.label }}
+      </option>
+    {% endfor %}
+  </select>
+  {% endif %}
+</form>
+
+<div class="full-chart-container">
+  {{ plot_html|safe }}
+</div>
+
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>Year</th>
+        <th>Pipeline Type</th>
+        <th>Liquid Type</th>
+        <th>Cause Category</th>
+        <th>Location</th>
+        <th>Cost (USD)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for spill in table_data %}
+      <tr class="{% if spill.cost > 5000000 %}cost-high{% elif spill.cost > 1000000 %}cost-medium{% else %}cost-low{% endif %}">
+        <td>{{ spill.year }}</td>
+        <td>{{ spill.pipeline_type }}</td>
+        <td>{{ spill.liquid_type }}</td>
+        <td>{{ spill.cause_category }}</td>
+        <td>{{ spill.location }}</td>
+        <td>${{ spill.cost|intcomma }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+</div>
+
+{% endblock %}

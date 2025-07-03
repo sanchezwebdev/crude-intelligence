@@ -1,0 +1,67 @@
+{% extends "base.html" %} {% load humanize %} {% block title %}Global Trade
+Flows{% endblock %} {% block content %}
+<style>
+  .full-chart-container {
+    width: 100%;
+    height: 85vh;    
+  }
+
+  .full-chart-container > div {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .table-container {
+    height: 50vh;
+    overflow-y: auto;
+    margin-top: 1rem;
+    border: 1px solid #ccc;
+    padding: 0.5rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    text-align: left;
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  th {
+    background-color: #0077b6;
+    color: white;
+    position: sticky;
+    top: 0;
+  }
+
+</style>
+<h1>🌐 Global Trade Flow</h1>
+<div>
+  <div class="full-chart-container">{{ plot_html|safe }}</div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Origin</th>
+          <th>Destination</th>
+          <th>Quantity</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in table_data %}
+        <tr>
+          <td>{{ row.origin }}</td>
+          <td>{{ row.destination }}</td>
+          <td>{{ row.quantity|intcomma }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

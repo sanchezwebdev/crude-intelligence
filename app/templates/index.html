@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+  Crude Intelligence Dashboard
+{% endblock %}
+
+{% block content %}
+
+<h1>📊 Crude Intelligence Dashboard</h1>
+
+<section>
+  <h2>Global Crude Oil Price Overview</h2>
+  {{ chart_prices|safe }}
+</section>
+
+<section style="margin-top: 20px">
+  <div style="display: flex; flex-wrap: wrap; gap: 2rem">
+        
+    <div style="flex: 1; min-width: 300px">
+      <h2 style="margin-bottom: 0.5rem;">Production Breakdown</h2>
+      {% if chart_production %}
+        {{ chart_production|safe }}
+      {% else %}
+        <p>Pie chart coming soon...</p>
+      {% endif %}
+    </div>
+    
+    <div style="flex: 1;">
+      <h2 style="margin-bottom: 0.5rem;">Consumption By Country Over Time</h2>
+      {% if consumption_heatmap %}
+        {{ consumption_heatmap|safe }}
+      {% else %}
+        <p>Heatmap coming soon...</p>
+      {% endif %}
+    </div>
+    
+  </div>
+</section>
+
+<section style="margin-top: 20px">
+  <h2>Global Oil Trade Flows</h2>
+    {% if chart_sankey %}
+      {{ chart_sankey|safe }}
+    {% else %}
+      <p>Sankey diagram coming soon...</p>
+    {% endif %}
+</section>
+
+<section style="margin-top: 20px">
+  <h2>Pipeline Spill Choropleth</h2>
+  <div class="mb-3">
+    <label for="metricSelector" class="form-label">Select Metric:</label>
+    <select id="metricSelector" class="form-select" style="max-width: 300px;">
+      <option value="incidents_per_1000_miles" selected>Incidents Per 1000 Miles of Pipeline</option>
+      <option value="total_spilled">Total Spillage</option>
+      <option value="cause_category">Spills by Cause</option>
+    </select>
+  </div>
+
+  <div class="mb-3" id="causeCategoryContainer" style="display:none;">
+    <label for="causeCategorySelector" class="form-label">Select Cause Category:</label>
+    <select id="causeCategorySelector" class="form-select" style="max-width: 300px;"></select>
+  </div>
+
+  <div id="choroplethContainer" style="width: 100%; height: 600px;"></div>
+</section>
+
+
+<section style="margin-top:20px">
+<h2>Global Oil Reserves</h2>                        
+
+<div id="reservesBarChart" style="width: 100%; height: 500px;"></div>
+</section>
+
+<script src="{% static 'js/reserve_chart.js' %}" defer></script>
+
+{% endblock %}

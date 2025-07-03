@@ -1,0 +1,1 @@
+web: gunicorn crude_intelligence.wsgi:application --log-file -
