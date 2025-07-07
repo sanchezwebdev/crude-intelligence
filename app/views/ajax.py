@@ -6,6 +6,9 @@ import plotly.graph_objs as go
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
+# ========================
+# Choropleth data endpoint
+# ========================
 @require_GET
 def choropleth_data(request):
     metric = request.GET.get("metric", "spill_per_mile")
@@ -41,7 +44,8 @@ def choropleth_data(request):
             data_json = df[["state", "value"]].to_dict(orient="records")
 
             return JsonResponse({"data": data_json})
-
+        
+        # Handle other metrics (total spilled, incidents per 1000 miles, spill per mile)
         else:
             cursor.execute("""
                 SELECT accident_state, COUNT(*) AS total_spilled
@@ -91,7 +95,10 @@ def choropleth_data(request):
 
             return JsonResponse({"data": data_json})
 
-        
+
+# ========================
+# Cause categories endpoint
+# ========================        
 @require_GET
 def cause_categories(request):
     with connection.cursor() as cursor:
@@ -115,6 +122,9 @@ def cause_categories(request):
 
     return JsonResponse({"causes": causes})
 
+# ========================
+# Fetch oil reserves data
+# ========================
 def fetch_reserve_data():
     with connection.cursor() as cursor:
         cursor.execute('SELECT * FROM "world_crude_oil_reserves_from_1995_to_2021" WHERE "world_crude_oil_reserves_(billion)" = %s',['World'])
@@ -131,6 +141,9 @@ def fetch_reserve_data():
 
     return df_years
 
+# ========================
+# Create reserves chart
+# ========================
 def crude_reserves_chart():
     df = fetch_reserve_data()
 

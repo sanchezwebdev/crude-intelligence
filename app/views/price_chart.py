@@ -5,6 +5,8 @@ import plotly.graph_objs as go
 from .utils import standardize_date
 
 def get_price_chart():
+
+    # Fetch WTI data (from Yahoo Finance style source)
     with connection.cursor() as cursor:
         cursor.execute("""
             SELECT date, close
@@ -14,6 +16,7 @@ def get_price_chart():
         """)
         wti_data = cursor.fetchall()
 
+     # Fetch Brent data
     with connection.cursor() as cursor:
         cursor.execute("""
             SELECT date, price
@@ -22,6 +25,7 @@ def get_price_chart():
         """)
         brent_data = cursor.fetchall()
 
+     # Fetch generic crude oil price data
     with connection.cursor() as cursor:
         cursor.execute("""
             SELECT date, price
@@ -30,26 +34,32 @@ def get_price_chart():
         """)
         crude_price_data = cursor.fetchall()
 
+    # Combine price data from multiple sources into a unified structure by date
     combined = defaultdict(lambda: {'wti': None, 'brent': None, 'crude': None})
 
+    # Fill combined dict with WTI data
     for raw_date, close_price in wti_data:
         date_obj = standardize_date(raw_date)
         combined[date_obj]['wti'] = close_price
 
+    # Fill combined dict with Brent data
     for raw_date, price in brent_data:
         date_obj = standardize_date(raw_date)
         combined[date_obj]['brent'] = price
 
+    # Fill combined dict with Crude data
     for raw_date, price in crude_price_data:
         date_obj = standardize_date(raw_date)
         combined[date_obj]['crude'] = price
 
+ # Sort dates to ensure time series consistency
     sorted_dates = sorted(combined.keys())
     dates = [d.isoformat() for d in sorted_dates]
     wti_prices = [combined[d]['wti'] for d in sorted_dates]
     brent_prices = [combined[d]['brent'] for d in sorted_dates]
     crude_prices = [combined[d]['crude'] for d in sorted_dates]
 
+    # Create Plotly figure with filled area lines for each price type
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=dates, y=wti_prices, mode='lines', name='WTI',
                              fill='tozeroy', line=dict(color='blue'),

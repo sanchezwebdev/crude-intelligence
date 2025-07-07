@@ -13,8 +13,11 @@ def oil_trade_flows(request):
         .annotate(total_quantity=Sum('quantity'))
         .order_by('-total_quantity')[:100]
     )
+
+    # Get top 100 origin countries/entities by total quantity exported
     top_origin_names = [item['originname'] for item in top_origins]
    
+    # Filter records for globe lines: non-null coords, large enough quantity, in top origins, exclude global aggregates
     globe_records = Data.objects.filter(
         origin_lat__isnull=False,
         origin_lon__isnull=False,
@@ -29,6 +32,7 @@ def oil_trade_flows(request):
     unique_origins = list(dict.fromkeys(record.originname for record in globe_records))
     origin_colors = {origin: colors[i % len(colors)] for i, origin in enumerate(unique_origins)}
 
+    # Add flow lines as scattergeo traces
     for record in globe_records:
         fig.add_trace(go.Scattergeo(
             lon=[record.origin_lon, record.dest_lon],
@@ -39,6 +43,7 @@ def oil_trade_flows(request):
             showlegend=False
         ))
 
+    # Configure globe styling and projection
     fig.update_geos(
         projection_type="orthographic",
         projection_rotation=dict(lon=-90, lat=20),
@@ -54,6 +59,7 @@ def oil_trade_flows(request):
         resolution=50
     )
 
+    # Prepare tabular summary of top trade flows (used for complementary table display)
     fig.update_layout(
         title="Global Oil Trade Flows (2024)",
         margin=dict(l=0, r=0, t=50, b=0),

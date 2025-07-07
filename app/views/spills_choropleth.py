@@ -4,7 +4,7 @@ import plotly.express as px
 
 def spills():    
     with connection.cursor() as cursor:
-        
+        # Query total unintentional oil release per state for 2010
         cursor.execute("""
             SELECT "accident_state", SUM("unintentional_release_(barrels)") AS total_spilled
             FROM database
@@ -15,6 +15,7 @@ def spills():
         spill_rows = cursor.fetchall()
         df_spill = pd.DataFrame(spill_rows, columns=["state", "total_spilled"])
        
+        # Fetch total pipeline miles per state for normalization
         cursor.execute("""
             SELECT state_code, pipeline_miles
             FROM pipeline_miles_per_state
@@ -22,11 +23,14 @@ def spills():
         miles_rows = cursor.fetchall()
         df_miles = pd.DataFrame(miles_rows, columns=["state", "pipeline_miles"])
    
+    # Merge spill data with miles data to enable per-mile normalization
     df = pd.merge(df_spill, df_miles, on="state")
 
+    # Calculate spillage rate per pipeline mile
     df["spill_per_mile"] = df["total_spilled"] / df["pipeline_miles"]
     df["spill_per_mile"].fillna(0, inplace=True)
     
+    # Create choropleth map of normalized spill rates
     fig = px.choropleth(
         df,
         locations="state",

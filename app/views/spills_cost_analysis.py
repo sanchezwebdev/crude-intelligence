@@ -14,6 +14,7 @@ COST_FIELDS = [
 ]
 
 def spills_cost_analysis(request):
+    # Get filter values from GET params
     selected_year = request.GET.get('year')
     selected_pipeline = request.GET.get('pipeline_type')
     selected_liquid = request.GET.get('liquid_type')
@@ -21,11 +22,13 @@ def spills_cost_analysis(request):
     selected_cause = request.GET.get('cause_category')
     selected_location = request.GET.get('pipeline_location')
 
+    # Default to 'all_costs' if no cost field selected
     selected_cost_fields = request.GET.getlist('cost_fields') or ['all_costs']
 
     filters = []
     params = []
 
+    # Dynamically build WHERE conditions and parameter list
     if selected_year:
         filters.append("accident_year = %s")
         params.append(selected_year)
@@ -47,8 +50,10 @@ def spills_cost_analysis(request):
 
     where_clause = " AND ".join(filters) if filters else "1=1"
 
+    # Explicitly quote field names for SQL safety
     quoted_cost_fields = [f'"{field}"' for field in COST_FIELDS]
 
+    # Fetch filtered spill records including all cost fields
     with connection.cursor() as cursor:
         cursor.execute(f"""
             SELECT 
@@ -65,6 +70,7 @@ def spills_cost_analysis(request):
     table_data = []
     total_cost = 0.0
 
+    # Iterate over results, calculate combined cost sum per record
     for row in rows:
         record = dict(zip([
             'accident_year', 'pipeline_location', 'pipeline_type', 'liquid_type',
@@ -76,6 +82,7 @@ def spills_cost_analysis(request):
         total_cost += included_cost
         table_data.append(record)
 
+    # Return JSON payload for AJAX requests
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse({
             'table_data': [
@@ -94,7 +101,7 @@ def spills_cost_analysis(request):
             'total_cost': round(total_cost)
         })
 
-    # Form filter options
+    # Build dropdown/filter option lists
     with connection.cursor() as cursor:
         cursor.execute("SELECT DISTINCT accident_year FROM database WHERE accident_year <> 2017 ORDER BY accident_year DESC")
         year_options = [str(row[0]) for row in cursor.fetchall()]
@@ -114,6 +121,7 @@ def spills_cost_analysis(request):
         cursor.execute("SELECT DISTINCT pipeline_location FROM database WHERE pipeline_location IS NOT NULL AND accident_year <> 2017 ORDER BY pipeline_location")
         location_options = [row[0] for row in cursor.fetchall()]
 
+    # Labels for each cost field
     cost_field_labels = {
         "property_damage_costs": "Property Damage",
         "lost_commodity_costs": "Lost Commodity",
@@ -132,6 +140,7 @@ def spills_cost_analysis(request):
             "checked": field in selected_cost_fields,
         })
 
+    # Render template with computed data and filter context
     return render(request, 'spills_cost_analysis.html', {
         'table_data': table_data,
         'total_cost': total_cost,

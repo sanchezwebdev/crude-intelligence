@@ -4,6 +4,7 @@ from plotly.offline import plot
 from django.db import connection
 
 def spill_events_map(request):    
+    # Read filter parameters from query string
     selected_year = request.GET.get('year')
     selected_pipeline = request.GET.get('pipeline_type')
     selected_liquid = request.GET.get('liquid_type')
@@ -12,6 +13,7 @@ def spill_events_map(request):
     filters = []
     params = []
     
+    # Default to 2016 if no year is provided
     if selected_year:
         filters.append("accident_year = %s")
         params.append(selected_year)
@@ -35,6 +37,7 @@ def spill_events_map(request):
     where_clause = " AND ".join(filters)
     
     with connection.cursor() as cursor:
+        # Fetch distinct options for each filter to populate dropdowns
         cursor.execute("SELECT DISTINCT accident_year FROM database WHERE accident_year <> 2017 ORDER BY accident_year DESC")
         year_options = [str(row[0]) for row in cursor.fetchall()]
 
@@ -48,6 +51,7 @@ def spill_events_map(request):
         cause_options = [row[0] for row in cursor.fetchall()]
     
     with connection.cursor() as cursor:
+        # Retrieve filtered spill event data for mapping and table
         cursor.execute(f"""
             SELECT 
                 accident_latitude,
@@ -75,6 +79,7 @@ def spill_events_map(request):
     spill_data = []
     for row in rows:
         lat, lon, cost, city, state, year, pipeline_type, liquid_type, cause_category = row
+        # Filter out any suspicious coordinates or zero-cost entries
         if cost > 0 and -90 <= lat <= 90 and -180 <= lon <= 180:
             spill_data.append({
                 "lat": float(lat),
@@ -85,10 +90,9 @@ def spill_events_map(request):
                 "pipeline_type": pipeline_type,
                 "liquid_type": liquid_type,
                 "cause_category": cause_category,
-                "cost": float(cost)
             })
 
-
+    # Handle empty data edge case
     if not spill_data:
         return render(request, 'spills_cost_analysis.html', {
             'plot_html': f'<div>No spill data found for selected filters</div>',
@@ -103,6 +107,7 @@ def spill_events_map(request):
             'selected_cause': selected_cause,
         })
 
+    # Build geo scatter plot with dynamic marker sizes based on cost
     fig = go.Figure()
     fig.add_trace(go.Scattergeo(
         lon=[spill["lon"] for spill in spill_data],
@@ -110,7 +115,7 @@ def spill_events_map(request):
         text=[f"{spill['location']}<br>Cost: ${spill['cost']:,.2f}<br>Year: {spill['year']}" for spill in spill_data],
         mode='markers',
         marker=dict(
-            size=[max(8, min(50, spill["cost"] / 10000)) for spill in spill_data],
+            size=[max(8, min(50, spill["cost"] / 10000)) for spill in spill_data],  # Scale cost to marker size
             color='#e5383b',
             opacity=0.8,
             sizemode='diameter',
@@ -120,6 +125,7 @@ def spill_events_map(request):
         hovertemplate='<b>%{text}</b><extra></extra>'
     ))
 
+    # Configure USA-focused map projection
     fig.update_geos(
         scope="usa",
         projection_type="albers usa",
@@ -145,6 +151,7 @@ def spill_events_map(request):
 
     plot_html = plot(fig, output_type='div', include_plotlyjs=True)
 
+    # Render final map and data table
     return render(request, 'spill_events_map.html', {
         'plot_html': plot_html,
         'table_data': spill_data,
