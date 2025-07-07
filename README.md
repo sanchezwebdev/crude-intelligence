@@ -29,7 +29,8 @@
 
 ## Example Visualization
 
-The `spills` view generates a choropleth map showing oil spillage per pipeline mile by U.S. state for the year 2010.
+The main dashboard provides an overview of global oil data, including crude oil price trends, production breakdown by source, consumption patterns by country over time, and global trade flows illustrated with a Sankey diagram.
+![Alt text](https://res.cloudinary.com/dyivstfjt/image/upload/v1751635361/pic_ci1_tkuzwq.png)
 
 ## Getting Started
 
@@ -65,7 +66,7 @@ The `spills` view generates a choropleth map showing oil spillage per pipeline m
     python manage.py runserver
     ```
 
-6. Access the app at `http://localhost:8000/`.
+6. Access the app at `http://127.0.0.1:8000/`.
 
 ## Usage
 
